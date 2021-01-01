@@ -43,6 +43,7 @@ Run these commands to clone and run TBomb.
 For Termux
 To use the bomber type the following commands in Termux:
 
+
 pkg install git -y 
 pkg install python -y 
 git clone https://github.com/TheSpeedX/TBomb.git
