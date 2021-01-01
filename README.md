@@ -1,4 +1,14 @@
-#TBomb v2.0b
+
+
+
+
+
+
+
+
+
+
+                   TBomb v2.0b
 A free and open-source SMS/Call bombing application
 
 Note:
