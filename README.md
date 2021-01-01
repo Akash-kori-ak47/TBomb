@@ -1,390 +1,97 @@
-#!/usr/bin/python
-# -*- coding: UTF-8 -*-
+#TBomb v2.0b
+A free and open-source SMS/Call bombing application
 
-import os
-import shutil
-import sys
-import subprocess
-import string
-import random
-import json
-import re
-import time
-import argparse
+Note:
+Deprecation Warning:
+All TBomb versions below v2.0 will no longer work after 14-11-2020.
+All TBomb users need to update to v2.0 ASAP
 
-from concurrent.futures import ThreadPoolExecutor, as_completed
+Due to overuse of script, a bunch APIs have been taken offline. It is okay if you do not receive all the messages.
 
-from utils.decorators import MessageDecorator
-from utils.provider import APIProvider
+The application requires active internet connection to contact the APIs
+You would not be charged for any SMS/calls dispatched as a consequence of this script
+For best performance, use single thread with considerable delay time
+Always ensure that you are using the latest version of TBomb and have Python 3
+This application must not be used to cause harm/discomfort/trouble to others
+By using this, you agree that you cannot hold the contributors responsible for any misuse
+Compatibility
+Check your Python version by typing in
 
-try:
-    import requests
-    from colorama import Fore, Style
-except ImportError:
-    print("\tSome dependencies could not be imported (possibly not installed)")
-    print(
-        "Type `pip3 install -r requirements.txt` to "
-        " install all required packages")
-    sys.exit(1)
+$ python --version
+If you get the following
 
+Python 3.8.3
+or any version greater than or equal to 3.4, this script has been tested and confirmed to be supported. For obsolete versions of Python (eg 2.7), use discretion while executing the script as it has not been tested there.
 
-def readisdc():
-    with open("isdcodes.json") as file:
-        isdcodes = json.load(file)
-    return isdcodes
+Features
+Over 15 integrated messaging and calling APIs included with JSON
+Unlimited (with abuse protection) and super-fast bombing with multithreading
+Possibility of international API support (APIs are offline)
+Flexible with addition of newer APIs with the help of JSON documents
+Actively supported by the developers with frequent updates and bug-fixes
+Intuitive auto-update feature and notification fetch feature included
+Recently made free and open-source for community contributions
+Modular codebase and snippets can be easily embedded in other program
+Usage:
+NOTE
+Git installation methods are not universal and are likely to differ between distributions so installing Git as per the given instructions below may not work. Please check out how to install Git for your Linux distribution here. Commands below provide instructions for Debian-based systems.
 
+Running TBomb.sh as sudo miscofigures files ownership. It is recommended not to run it as sudo
 
-def get_version():
-    try:
-        return open(".version", "r").read().strip()
-    except Exception:
-        return '1.0'
+Run these commands to clone and run TBomb.
 
+For Termux
+To use the bomber type the following commands in Termux:
 
-def clr():
-    if os.name == "nt":
-        os.system("cls")
-    else:
-        os.system("clear")
+pkg install git -y 
+pkg install python -y 
+git clone https://github.com/TheSpeedX/TBomb.git
+cd TBomb
+./TBomb.sh
+For iSH
+To use the application, type in the following commands in iSH.
 
+apk add git
+apk add python3
+apk add py3-pip
+git clone https://github.com/TheSpeedX/TBomb.git
+cd TBomb
+pip3 install -r requirements.txt
+chmod +x TBomb.sh
+./TBomb.sh
+For Debian-based GNU/Linux distributions
+To use the application, type in the following commands in GNU/Linux terminal.
 
-def bann_text():
-    clr()
-    logo = """
-   ████████ █████                 ██
-   ▒▒▒██▒▒▒ ██▒▒██                ██
-      ██    ██  ██        ██   ██ ██
-      ██    █████▒  ████  ███ ███ █████
-      ██    ██▒▒██ ██  ██ ██▒█▒██ ██▒▒██
-      ██    ██  ██ ██  ██ ██ ▒ ██ ██  ██
-      ██    █████▒ ▒████▒ ██   ██ █████▒
-      ▒▒    ▒▒▒▒▒   ▒▒▒▒  ▒▒   ▒▒ ▒▒▒▒▒
-                                         """
-    version = "Version: "+__VERSION__
-    contributors = "Contributors: "+" ".join(__CONTRIBUTORS__)
-    print(random.choice(ALL_COLORS) + logo + RESET_ALL)
-    mesgdcrt.SuccessMessage(version)
-    mesgdcrt.SectionMessage(contributors)
-    print()
+sudo apt install git
+git clone https://github.com/TheSpeedX/TBomb.git
+cd TBomb
+bash TBomb.sh
+For MacOS
+To use the application, type in the following commands in MacOS terminal:
 
+Install Brew
+/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+Install dependencies:
+brew install git
+brew install python3
+sudo easy_install pip
+sudo pip install --upgrade pip
+git clone https://github.com/TheSpeedX/TBomb.git
+cd TBomb
+Run TBomb
+bash TBomb.sh
+Missing Tools on MacOS & iSH App
+The package toilet cannot be installed yet. But TBomb does still work.
 
-def check_intr():
-    try:
-        requests.get("https://motherfuckingwebsite.com")
-    except Exception:
-        bann_text()
-        mesgdcrt.FailureMessage("Poor internet connection detected")
-        sys.exit(2)
-
-
-def format_phone(num):
-    num = [n for n in num if n in string.digits]
-    return ''.join(num).strip()
-
-
-def do_zip_update():
-    success = False
-
-    # Download Zip from git
-    # Unzip and overwrite the current folder
-
-    if success:
-        mesgdcrt.SuccessMessage("TBomb was updated to the latest version")
-        mesgdcrt.GeneralMessage(
-            "Please run the script again to load the latest version")
-    else:
-        mesgdcrt.FailureMessage("Unable to update TBomb.")
-        mesgdcrt.WarningMessage(
-            "Grab The Latest one From https://github.com/TheSpeedX/TBomb.git")
-
-    sys.exit()
-
-
-def do_git_update():
-    success = False
-    try:
-        print(ALL_COLORS[0]+"UPDATING "+RESET_ALL, end='')
-        process = subprocess.Popen("git checkout . && git pull ",
-                                   shell=True,
-                                   stdout=subprocess.PIPE,
-                                   stderr=subprocess.STDOUT)
-        while process:
-            print(ALL_COLORS[0]+'.'+RESET_ALL, end='')
-            time.sleep(1)
-            returncode = process.poll()
-            if returncode is not None:
-                break
-        success = not process.returncode
-    except Exception:
-        success = False
-    print("\n")
-
-    if success:
-        mesgdcrt.SuccessMessage("TBomb was updated to the latest version")
-        mesgdcrt.GeneralMessage(
-            "Please run the script again to load the latest version")
-    else:
-        mesgdcrt.FailureMessage("Unable to update TBomb.")
-        mesgdcrt.WarningMessage("Make Sure To Install 'git' ")
-        mesgdcrt.GeneralMessage("Then run command:")
-        print(
-            "git checkout . && "
-            "git pull https://github.com/TheSpeedX/TBomb.git HEAD")
-    sys.exit()
-
-
-def update():
-    if shutil.which('git'):
-        do_git_update()
-    else:
-        do_zip_update()
-
-
-def check_for_updates():
-    mesgdcrt.SectionMessage("Checking for updates")
-    fver = requests.get(
-            "https://raw.githubusercontent.com/TheSpeedX/TBomb/master/.version"
-            ).text.strip()
-    if fver != __VERSION__:
-        mesgdcrt.WarningMessage("An update is available")
-        mesgdcrt.GeneralMessage("Starting update...")
-        update()
-    else:
-        mesgdcrt.SuccessMessage("TBomb is up-to-date")
-        mesgdcrt.GeneralMessage("Starting TBomb")
-
-
-def notifyen():
-    try:
-        noti = requests.get(
-            "https://raw.githubusercontent.com/TheSpeedX/TBomb/master/.notify"
-            ).text.upper()
-        if len(noti) > 10:
-            mesgdcrt.SectionMessage("NOTIFICATION: " + noti)
-            print()
-    except Exception:
-        pass
-
-
-def get_phone_info():
-    while True:
-        target = ""
-        cc = input(mesgdcrt.CommandMessage(
-            "Enter your country code (Without +): "))
-        cc = format_phone(cc)
-        if not country_codes.get(cc, False):
-            mesgdcrt.WarningMessage(
-                "The country code ({cc}) that you have entered"
-                " is invalid or unsupported".format(cc=cc))
-            continue
-        target = input(mesgdcrt.CommandMessage(
-            "Enter the target number: +" + cc + " "))
-        target = format_phone(target)
-        if ((len(target) <= 6) or (len(target) >= 12)):
-            mesgdcrt.WarningMessage(
-                "The phone number ({target})".format(target=target) +
-                "that you have entered is invalid")
-            continue
-        return (cc, target)
-
-
-def get_mail_info():
-    mail_regex = r'^[a-z0-9]+[\._]?[a-z0-9]+[@]\w+[.]\w{2,3}$'
-    while True:
-        target = input(mesgdcrt.CommandMessage("Enter target mail: "))
-        if not re.search(mail_regex, target, re.IGNORECASE):
-            mesgdcrt.WarningMessage(
-                "The mail ({target})".format(target=target) +
-                " that you have entered is invalid")
-            continue
-        return target
-
-
-def pretty_print(cc, target, success, failed):
-    requested = success+failed
-    mesgdcrt.SectionMessage("Bombing is in progress - Please be patient")
-    mesgdcrt.GeneralMessage(
-        "Please stay connected to the internet during bombing")
-    mesgdcrt.GeneralMessage("Target       : " + cc + " " + target)
-    mesgdcrt.GeneralMessage("Sent         : " + str(requested))
-    mesgdcrt.GeneralMessage("Successful   : " + str(success))
-    mesgdcrt.GeneralMessage("Failed       : " + str(failed))
-    mesgdcrt.WarningMessage(
-        "This tool was made for fun and research purposes only")
-    mesgdcrt.SuccessMessage("TBomb was created by SpeedX")
-
-
-def workernode(mode, cc, target, count, delay, max_threads):
-
-    api = APIProvider(cc, target, mode, delay=delay)
-    clr()
-    mesgdcrt.SectionMessage("Gearing up the Bomber - Please be patient")
-    mesgdcrt.GeneralMessage(
-        "Please stay connected to the internet during bombing")
-    mesgdcrt.GeneralMessage("API Version   : " + api.api_version)
-    mesgdcrt.GeneralMessage("Target        : " + cc + target)
-    mesgdcrt.GeneralMessage("Amount        : " + str(count))
-    mesgdcrt.GeneralMessage("Threads       : " + str(max_threads) + " threads")
-    mesgdcrt.GeneralMessage("Delay         : " + str(delay) +
-                            " seconds")
-    mesgdcrt.WarningMessage(
-        "This tool was made for fun and research purposes only")
-    print()
-    input(mesgdcrt.CommandMessage(
-        "Press [CTRL+Z] to suspend the bomber or [ENTER] to resume it"))
-
-    if len(APIProvider.api_providers) == 0:
-        mesgdcrt.FailureMessage("Your country/target is not supported yet")
-        mesgdcrt.GeneralMessage("Feel free to reach out to us")
-        input(mesgdcrt.CommandMessage("Press [ENTER] to exit"))
-        bann_text()
-        sys.exit()
-
-    success, failed = 0, 0
-    while success < count:
-        with ThreadPoolExecutor(max_workers=max_threads) as executor:
-            jobs = []
-            for i in range(count-success):
-                jobs.append(executor.submit(api.hit))
-
-            for job in as_completed(jobs):
-                result = job.result()
-                if result is None:
-                    mesgdcrt.FailureMessage(
-                        "Bombing limit for your target has been reached")
-                    mesgdcrt.GeneralMessage("Try Again Later !!")
-                    input(mesgdcrt.CommandMessage("Press [ENTER] to exit"))
-                    bann_text()
-                    sys.exit()
-                if result:
-                    success += 1
-                else:
-                    failed += 1
-                clr()
-                pretty_print(cc, target, success, failed)
-    print("\n")
-    mesgdcrt.SuccessMessage("Bombing completed!")
-    time.sleep(1.5)
-    bann_text()
-    sys.exit()
-
-
-def selectnode(mode="sms"):
-    mode = mode.lower().strip()
-    try:
-        clr()
-        bann_text()
-        check_intr()
-        check_for_updates()
-        notifyen()
-
-        max_limit = {"sms": 500, "call": 15, "mail": 200}
-        cc, target = "", ""
-        if mode in ["sms", "call"]:
-            cc, target = get_phone_info()
-            if cc != "91":
-                max_limit.update({"sms": 100})
-        elif mode == "mail":
-            target = get_mail_info()
-        else:
-            raise KeyboardInterrupt
-
-        limit = max_limit[mode]
-        while True:
-            try:
-                message = ("Enter number of {type}".format(type=mode.upper()) +
-                           " to send (Max {limit}): ".format(limit=limit))
-                count = int(input(mesgdcrt.CommandMessage(message)).strip())
-                if count > limit or count == 0:
-                    mesgdcrt.WarningMessage("You have requested " + str(count)
-                                            + " {type}".format(
-                                                type=mode.upper()))
-                    mesgdcrt.GeneralMessage(
-                        "Automatically capping the value"
-                        " to {limit}".format(limit=limit))
-                    count = limit
-                delay = float(input(
-                    mesgdcrt.CommandMessage("Enter delay time (in seconds): "))
-                    .strip())
-                # delay = 0
-                max_thread_limit = (count//10) if (count//10) > 0 else 1
-                max_threads = int(input(
-                    mesgdcrt.CommandMessage(
-                        "Enter Number of Thread (Recommended: {max_limit}): "
-                        .format(max_limit=max_thread_limit)))
-                    .strip())
-                max_threads = max_threads if (
-                    max_threads > 0) else max_thread_limit
-                if (count < 0 or delay < 0):
-                    raise Exception
-                break
-            except KeyboardInterrupt as ki:
-                raise ki
-            except Exception:
-                mesgdcrt.FailureMessage("Read Instructions Carefully !!!")
-                print()
-
-        workernode(mode, cc, target, count, delay, max_threads)
-    except KeyboardInterrupt:
-        mesgdcrt.WarningMessage("Received INTR call - Exiting...")
-        sys.exit()
-
-
-mesgdcrt = MessageDecorator("icon")
-if sys.version_info[0] != 3:
-    mesgdcrt.FailureMessage("TBomb will work only in Python v3")
-    sys.exit()
-
-try:
-    country_codes = readisdc()["isdcodes"]
-except FileNotFoundError:
-    update()
-
-
-__VERSION__ = get_version()
-__CONTRIBUTORS__ = ['SpeedX', 't0xic0der', 'scpketer', 'Stefan']
-
-ALL_COLORS = [Fore.GREEN, Fore.RED, Fore.YELLOW, Fore.BLUE,
-              Fore.MAGENTA, Fore.CYAN, Fore.WHITE]
-RESET_ALL = Style.RESET_ALL
-
-description = """TBomb - Your Friendly Spammer Application
-TBomb can be used for many purposes which incudes -
-\t Exposing the vulnerable APIs over Internet
-\t Friendly Spamming
-\t Testing Your Spam Detector and more ....
-TBomb is not intented for malicious uses.
-"""
-
-parser = argparse.ArgumentParser(description=description,
-                                 epilog='Coded by SpeedX !!!')
-parser.add_argument("-sms", "--sms", action="store_true",
-                    help="start TBomb with SMS Bomb mode")
-parser.add_argument("-call", "--call", action="store_true",
-                    help="start TBomb with CALL Bomb mode")
-parser.add_argument("-mail", "--mail", action="store_true",
-                    help="start TBomb with MAIL Bomb mode")
-parser.add_argument("-u", "--update", action="store_true",
-                    help="update TBomb")
-parser.add_argument("-c", "--contributors", action="store_true",
-                    help="show current TBomb contributors")
-parser.add_argument("-v", "--version", action="store_true",
-                    help="show current TBomb version")
-
-
-if __name__ == "__main__":
-    args = parser.parse_args()
-    if args.version:
-        print("Version: ", __VERSION__)
-    elif args.contributors:
-        print("Contributors: ", " ".join(__CONTRIBUTORS__))
-    elif args.update:
-        update()
-    elif args.mail:
-        selectnode(mode="mail")
-    elif args.call:
-        selectnode(mode="call")
-    elif args.sms:
-        selectnode(mode="sms")
-    else:
-        choice
+Demonstrative Video:
+Watch Indian Bombing Method here
+Watch International Bombing Method here.
+Contributors
+Catch t0xic0der at https://atlasdoc.netlify.app
+Check Avinash at https://github.com/AvinashReddy3108
+Mail scpketer at scpketer@protonmail.ch
+Mail Stefan at 0n1cOn3@gmx.ch
+Ping Rieltar at https://t.me/RieltarReborn
+Donators:
+34D30Y
+SC AMAN
